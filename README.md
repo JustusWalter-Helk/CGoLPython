@@ -5,7 +5,7 @@ This project was made as a school project in 12th grade for my computer science 
 
 First time using python for a bigger project so this code might not be as organized as it should be!
 
-Grade received: ~**TBA**~
+Grade received: ***TBA***
 # Requirements
 This project uses [pysdl2](https://pypi.org/project/PySDL2/) a python wrapper for the C++ SDL2 library.
 
