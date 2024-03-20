@@ -28,3 +28,5 @@ class CellInformation(object):
         self.column = column
         self.enabled = False
         self.aliveNeighbours = 0
+
+        self.UUID = 0

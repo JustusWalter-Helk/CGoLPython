@@ -1,6 +1,10 @@
 from sdl2 import SDL_INIT_EVERYTHING, SDL_Init
 from Window import *
 
+import uuid
+
+import time
+
 from Renderer import *
 
 import sdl2.ext
@@ -13,6 +17,10 @@ factory = sdl2.ext.SpriteFactory(sdl2.ext.SOFTWARE)
 
 cells : list[Cell] = []
 
+#Instead of calculating the neighbours each simulation step, we can precalculate them and safe them in a array
+#To get the neighbours of a cell index this array at cellIndex * 8
+precalculatedNeighbours : list[Cell] = []
+
 #Util function
 def getCellAtPosition(row : int, column : int):
     cell : Cell
@@ -24,24 +32,23 @@ def getCellAtPosition(row : int, column : int):
     return Cell(dummyWorld, dummySprite, -100,-100, -100,-100)
 
 def stepSimulation():
+    startTime = time.time()
     cell : Cell
     #Update Neighbour counts
     for cell in cells:
-        #Calculating Neighbours
-        row : int = cell.cellinformation.row
-        column : int = cell.cellinformation.column
+        cellIndex = cells.index(cell)
 
-        left : Cell = getCellAtPosition(row - 1 ,column)
-        up : Cell = getCellAtPosition(row, column + 1)
-        right : Cell = getCellAtPosition(row + 1, column)
-        down : Cell = getCellAtPosition(row, column - 1)
-
-        leftUp : Cell = getCellAtPosition(row - 1, column + 1)
-        leftDown : Cell = getCellAtPosition(row - 1, column - 1)
-        rightUp : Cell = getCellAtPosition(row + 1, column + 1)
-        rightDown : Cell = getCellAtPosition(row + 1, column - 1)
-
-        cell.cellinformation.aliveNeighbours = left.cellinformation.enabled + up.cellinformation.enabled + right.cellinformation.enabled + down.cellinformation.enabled + leftUp.cellinformation.enabled + leftDown.cellinformation.enabled + rightDown.cellinformation.enabled + rightUp.cellinformation.enabled
+        alive = 0
+        
+        neighbourIndices = range(cellIndex * 8, (cellIndex + 1) * 8)
+        for neighbourIndex in neighbourIndices:
+            neighbourCell = precalculatedNeighbours[neighbourIndex]
+            if neighbourCell.cellinformation.enabled:
+                alive += 1
+        
+        cell.cellinformation.aliveNeighbours = alive
+        
+    #cell.cellinformation.aliveNeighbours = left.cellinformation.enabled + up.cellinformation.enabled + right.cellinformation.enabled + down.cellinformation.enabled + leftUp.cellinformation.enabled + leftDown.cellinformation.enabled + rightDown.cellinformation.enabled + rightUp.cellinformation.enabled
     #Actually update Cell states
     for cell in cells:
         aliveCounter : int = cell.cellinformation.aliveNeighbours
@@ -59,7 +66,7 @@ def stepSimulation():
 
         newSprite = factory.from_color(color, size=(cellSize, cellSize))
         cell.updateSprite(newSprite)
-
+    print("Simulation Step took", time.time() - startTime, "seconds")
 
 class Application:
     def __init__(self) -> None:
@@ -91,7 +98,39 @@ class Application:
                 
                 cell = Cell(world, cellSprite, row, column, (column * (cellSize + cellMargin)), (row * (cellSize + cellMargin)))
                 
+                cell.cellinformation.UUID = uuid.uuid4()
+
                 cells.append(cell)
+
+        currentIndex : int = 0
+        for cell in cells:
+            #Precalculating Neighbours
+            row : int = cell.cellinformation.row
+            column : int = cell.cellinformation.column
+
+            left : Cell = getCellAtPosition(row - 1 ,column)
+            up : Cell = getCellAtPosition(row, column + 1)
+            right : Cell = getCellAtPosition(row + 1, column)
+            down : Cell = getCellAtPosition(row, column - 1)
+
+            leftUp : Cell = getCellAtPosition(row - 1, column + 1)
+            leftDown : Cell = getCellAtPosition(row - 1, column - 1)
+            rightUp : Cell = getCellAtPosition(row + 1, column + 1)
+            rightDown : Cell = getCellAtPosition(row + 1, column - 1)
+
+            precalculatedNeighbours.append(left)
+            precalculatedNeighbours.append(up)
+            precalculatedNeighbours.append(right)
+            precalculatedNeighbours.append(down)
+
+            precalculatedNeighbours.append(leftUp)
+            precalculatedNeighbours.append(leftDown)
+            precalculatedNeighbours.append(rightUp)
+            precalculatedNeighbours.append(rightDown)
+
+            currentIndex += 8
+
+        print(precalculatedNeighbours[10].cellinformation.row)
 
         #Entering game loop
         while(self.running):
